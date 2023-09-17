@@ -9,13 +9,21 @@ def browse_image():
     if file_path:
         input_image_path.set(file_path)
 
-        # Automatically set the output file name and extension
-        original_name, _ = os.path.splitext(os.path.basename(file_path))
-        output_entry.delete(0, tk.END)  # Clear the output file name
-        output_entry.insert(0, original_name)  # Set the output file name
+        # Automatically detect file format and set available conversion options
+        with Image.open(file_path) as img:
+            formats = ["WebP"]
+            if img.format == "JPEG":
+                formats.extend(["PNG", "WebP"])
+            elif img.format == "PNG":
+                formats.extend(["JPEG", "WebP"])
+            elif img.format == "WebP":
+                formats.extend(["JPEG", "PNG"])
 
-        # Set the default output directory to the directory of the input file
-        output_dir = os.path.dirname(file_path)
+            conversion_menu['values'] = formats
+
+def browse_output_directory():
+    output_dir = filedialog.askdirectory()
+    if output_dir:
         output_dir_entry.delete(0, tk.END)
         output_dir_entry.insert(0, output_dir)
 
@@ -40,20 +48,13 @@ def convert_image():
         output_extension = get_output_extension(conversion_type)
         output_path = os.path.join(output_dir, f"{output_filename}.{output_extension}")
 
-        if conversion_type == "WebP to JPEG":
+        if conversion_type == "WebP":
+            image.save(output_path, "WEBP")
+        elif conversion_type == "JPEG":
             image = image.convert("RGB")
             image.save(output_path, "JPEG")
-        elif conversion_type == "WebP to PNG":
+        elif conversion_type == "PNG":
             image.save(output_path, "PNG")
-        elif conversion_type == "JPEG to PNG":
-            image.save(output_path, "PNG")
-        elif conversion_type == "JPEG to WebP":
-            image.save(output_path, "WEBP")
-        elif conversion_type == "PNG to JPEG":
-            image = image.convert("RGB")
-            image.save(output_path, "JPEG")
-        elif conversion_type == "PNG to WebP":
-            image.save(output_path, "WEBP")
 
         result_label.config(text=f"Conversion successful: {conversion_type}")
 
@@ -65,12 +66,9 @@ def convert_image():
 
 def get_output_extension(conversion_type):
     extensions = {
-        "WebP to JPEG": "jpg",
-        "WebP to PNG": "png",
-        "JPEG to PNG": "png",
-        "JPEG to WebP": "webp",
-        "PNG to JPEG": "jpg",
-        "PNG to WebP": "webp"
+        "WebP": "webp",
+        "JPEG": "jpg",
+        "PNG": "png",
     }
     return extensions.get(conversion_type, "")
 
@@ -86,6 +84,15 @@ def check_conversion_selection(*args):
 # Create the main window
 root = tk.Tk()
 root.title("Image Converter")
+
+# Calculate the window position to center it on the screen
+window_width = 400
+window_height = 400
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
+x_position = (screen_width - window_width) // 2
+y_position = (screen_height - window_height) // 2
+root.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
 
 # Use ttk style for better visual appearance
 style = ttk.Style()
@@ -111,16 +118,7 @@ input_entry.pack()
 conversion_label = ttk.Label(root, text="Select conversion:")
 conversion_label.pack()
 
-conversion_options = [
-    "WebP to JPEG",
-    "WebP to PNG",
-    "JPEG to PNG",
-    "JPEG to WebP",
-    "PNG to JPEG",
-    "PNG to WebP"
-]
-
-conversion_menu = ttk.Combobox(root, textvariable=conversion_var, values=conversion_options)
+conversion_menu = ttk.Combobox(root, textvariable=conversion_var, values=[], state="readonly")
 conversion_menu.pack()
 
 output_label = ttk.Label(root, text="Save as:")
@@ -134,6 +132,9 @@ output_dir_label.pack()
 
 output_dir_entry = ttk.Entry(root)
 output_dir_entry.pack()
+
+browse_output_button = ttk.Button(root, text="Browse Output Directory", command=browse_output_directory)
+browse_output_button.pack()
 
 # Checkbox to open the folder after conversion
 open_folder_checkbox = ttk.Checkbutton(root, text="Open folder after conversion", variable=open_folder_var)
