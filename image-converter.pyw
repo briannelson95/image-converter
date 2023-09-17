@@ -1,23 +1,28 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter import filedialog
-from PIL import Image
+from tkinter import filedialog, messagebox
+from PIL import Image, ImageTk
 import os
 
 def browse_image():
-    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.webp")])
+    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.webp *.heic")])
     if file_path:
         input_image_path.set(file_path)
+        update_preview_image(file_path)
 
         # Automatically detect file format and set available conversion options
         with Image.open(file_path) as img:
-            formats = ["WebP"]
+            formats = []
             if img.format == "JPEG":
-                formats.extend(["PNG", "WebP"])
+                formats.extend(["WebP", "PNG"])
             elif img.format == "PNG":
-                formats.extend(["JPEG", "WebP"])
+                formats.extend(["WebP", "JPEG"])
             elif img.format == "WebP":
                 formats.extend(["JPEG", "PNG"])
+            elif img.format == "HEIC":
+                formats.extend(["JPEG", "PNG", "WebP"])
+            else:
+                formats.extend(["WebP", "JPEG", "PNG"])
 
             conversion_menu['values'] = formats
 
@@ -52,7 +57,7 @@ def convert_image():
         counter = 1
         while os.path.exists(output_path):
             # File with the same name already exists, prompt the user
-            result = tk.messagebox.askyesno(
+            result = messagebox.askyesno(
                 "File Already Exists",
                 f"A file named '{output_filename}.{output_extension}' already exists in the chosen directory. Do you want to override it?"
             )
@@ -74,7 +79,8 @@ def convert_image():
             image.save(output_path, "JPEG")
         elif conversion_type == "PNG":
             image.save(output_path, "PNG")
-
+        elif conversion_type == "HEIC":
+            image.save(output_path, "JPEG", quality=95)  # Convert .HEIC to .JPEG
         result_label.config(text=f"Conversion successful: {conversion_type}")
 
         # Open the folder containing the converted file if the checkbox is selected
@@ -100,13 +106,23 @@ def check_conversion_selection(*args):
         convert_button.config(state=tk.NORMAL)
         result_label.config(text="")
 
+def update_preview_image(file_path):
+    try:
+        image = Image.open(file_path)
+        image.thumbnail((200, 200))  # Adjust the size of the preview image
+        photo = ImageTk.PhotoImage(image)
+        canvas.create_image(0, 0, anchor='nw', image=photo)
+        canvas.photo = photo  # Keep a reference to the photo to prevent garbage collection
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load the preview image: {str(e)}")
+
 # Create the main window
 root = tk.Tk()
 root.title("Image Converter")
 
 # Calculate the window position to center it on the screen
-window_width = 400
-window_height = 400
+window_width = 800  # Adjusted width
+window_height = 400  # Adjusted height
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 x_position = (screen_width - window_width) // 2
@@ -125,45 +141,58 @@ conversion_var = tk.StringVar()
 open_folder_var = tk.BooleanVar()  # Variable to store the checkbox state
 
 # Create GUI components with ttk styling
-input_label = ttk.Label(root, text="Select an image file:")
-input_label.pack()
+frame_left = ttk.Frame(root)
+frame_left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-browse_button = ttk.Button(root, text="Browse", command=browse_image)
-browse_button.pack()
+frame_right = ttk.Frame(root)
+frame_right.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-input_entry = ttk.Entry(root, textvariable=input_image_path)
-input_entry.pack()
+input_label = ttk.Label(frame_left, text="Select an image file:")
+input_label.pack(fill=tk.X)
 
-conversion_label = ttk.Label(root, text="Select conversion:")
-conversion_label.pack()
+browse_button = ttk.Button(frame_left, text="Browse", command=browse_image)
+browse_button.pack(fill=tk.X)
 
-conversion_menu = ttk.Combobox(root, textvariable=conversion_var, values=[], state="readonly")
-conversion_menu.pack()
+input_entry = ttk.Entry(frame_left, textvariable=input_image_path)
+input_entry.pack(fill=tk.X)
 
-output_label = ttk.Label(root, text="Save as:")
-output_label.pack()
+preview_label = ttk.Label(frame_left, text="Preview:")
+preview_label.pack(fill=tk.X)
 
-output_entry = ttk.Entry(root)
-output_entry.pack()
+# Create a canvas to display the preview image
+canvas = tk.Canvas(frame_left, width=200, height=200)
+canvas.pack(fill=tk.X)
 
-output_dir_label = ttk.Label(root, text="Output directory:")
-output_dir_label.pack()
+output_dir_label = ttk.Label(frame_left, text="Output directory:")
+output_dir_label.pack(fill=tk.X)
 
-output_dir_entry = ttk.Entry(root)
-output_dir_entry.pack()
+output_dir_entry = ttk.Entry(frame_left)
+output_dir_entry.pack(fill=tk.X)
 
-browse_output_button = ttk.Button(root, text="Browse Output Directory", command=browse_output_directory)
-browse_output_button.pack()
+browse_output_button = ttk.Button(frame_left, text="Browse Output Directory", command=browse_output_directory)
+browse_output_button.pack(fill=tk.X)
+
+conversion_label = ttk.Label(frame_right, text="Select conversion:")
+conversion_label.pack(fill=tk.X)
+
+conversion_menu = ttk.Combobox(frame_right, textvariable=conversion_var, values=[], state="readonly")
+conversion_menu.pack(fill=tk.X)
+
+output_label = ttk.Label(frame_right, text="Save as:")
+output_label.pack(fill=tk.X)
+
+output_entry = ttk.Entry(frame_right)
+output_entry.pack(fill=tk.X)
 
 # Checkbox to open the folder after conversion
-open_folder_checkbox = ttk.Checkbutton(root, text="Open folder after conversion", variable=open_folder_var)
-open_folder_checkbox.pack()
+open_folder_checkbox = ttk.Checkbutton(frame_right, text="Open folder after conversion", variable=open_folder_var)
+open_folder_checkbox.pack(fill=tk.X)
 
-convert_button = ttk.Button(root, text="Convert", command=convert_image, state=tk.DISABLED)
-convert_button.pack()
+convert_button = ttk.Button(frame_right, text="Convert", command=convert_image, state=tk.DISABLED)
+convert_button.pack(fill=tk.X)
 
-result_label = ttk.Label(root, text="")
-result_label.pack()
+result_label = ttk.Label(frame_right, text="", wraplength=200)  # Wrap text to a maximum width of 200 pixels
+result_label.pack(fill=tk.X)
 
 # Check for conversion selection when the conversion menu changes
 conversion_var.trace_add("write", check_conversion_selection)
