@@ -48,6 +48,25 @@ def convert_image():
         output_extension = get_output_extension(conversion_type)
         output_path = os.path.join(output_dir, f"{output_filename}.{output_extension}")
 
+        # Check if the file already exists in the output directory
+        counter = 1
+        while os.path.exists(output_path):
+            # File with the same name already exists, prompt the user
+            result = tk.messagebox.askyesno(
+                "File Already Exists",
+                f"A file named '{output_filename}.{output_extension}' already exists in the chosen directory. Do you want to override it?"
+            )
+            if result:
+                # User chose to override the file
+                break
+            else:
+                # User chose not to override the file, add a number to the filename
+                counter += 1
+                output_filename = f"{output_filename}_{counter}"
+
+            # Update the output path with the new filename
+            output_path = os.path.join(output_dir, f"{output_filename}.{output_extension}")
+
         if conversion_type == "WebP":
             image.save(output_path, "WEBP")
         elif conversion_type == "JPEG":
