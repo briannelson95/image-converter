@@ -5,7 +5,7 @@ from PIL import Image, ImageTk
 import os
 
 def browse_image():
-    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.webp *.heic")])
+    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.webp *.heic, *.HEIC")])
     if file_path:
         input_image_path.set(file_path)
         update_preview_image(file_path)
