@@ -89,8 +89,14 @@ class ImageConverterApp:
         self.canvas = tk.Canvas(self.frame_left, width=200, height=200)
         self.canvas.pack(fill=tk.X)
 
+        conversion_label = ttk.Label(self.frame_right, text="Select conversion:")
+        conversion_label.pack(fill=tk.X)
+
+        self.conversion_menu = ttk.Combobox(self.frame_right, textvariable=self.conversion_var, values=[], state="readonly")
+        self.conversion_menu.pack(fill=tk.X)
+
         browse_output_button = ttk.Button(self.frame_right, text="Choose Output Directory", command=self.browse_output_directory)
-        browse_output_button.pack(fill=tk.X)
+        browse_output_button.pack(fill=tk.X, pady=18)
 
         output_dir_label = ttk.Label(self.frame_right, text="Output directory:")
         output_dir_label.pack(fill=tk.X)
@@ -98,14 +104,8 @@ class ImageConverterApp:
         self.output_dir_entry = ttk.Entry(self.frame_right)
         self.output_dir_entry.pack(fill=tk.X)
 
-        conversion_label = ttk.Label(self.frame_right, text="Select conversion:")
-        conversion_label.pack(fill=tk.X)
-
-        self.conversion_menu = ttk.Combobox(self.frame_right, textvariable=self.conversion_var, values=[], state="readonly")
-        self.conversion_menu.pack(fill=tk.X)
-
         output_label = ttk.Label(self.frame_right, text="Save as:")
-        output_label.pack(fill=tk.X)
+        output_label.pack(fill=tk.X, pady=10)
 
         self.output_entry = ttk.Entry(self.frame_right)
         self.output_entry.pack(fill=tk.X)
@@ -139,20 +139,20 @@ class ImageConverterApp:
         clear_all_button = ttk.Button(self.frame_left, text="Clear All", command=self.clear_all_files)
         clear_all_button.pack(fill=tk.X)
 
+        conversion_label = ttk.Label(self.frame_right, text="Select conversion:")
+        conversion_label.pack(fill=tk.X)
+
+        self.conversion_menu = ttk.Combobox(self.frame_right, textvariable=self.conversion_var, values=["JPEG", "PNG", "WebP"], state="readonly")
+        self.conversion_menu.pack(fill=tk.X)
+
         browse_output_button = ttk.Button(self.frame_right, text="Choose Output Directory", command=self.browse_output_directory)
-        browse_output_button.pack(fill=tk.X)
+        browse_output_button.pack(fill=tk.X, pady=20)
 
         output_dir_label = ttk.Label(self.frame_right, text="Output directory:")
         output_dir_label.pack(fill=tk.X)
 
         self.output_dir_entry = ttk.Entry(self.frame_right)
         self.output_dir_entry.pack(fill=tk.X)
-
-        conversion_label = ttk.Label(self.frame_right, text="Select conversion:")
-        conversion_label.pack(fill=tk.X)
-
-        self.conversion_menu = ttk.Combobox(self.frame_right, textvariable=self.conversion_var, values=["JPEG", "PNG", "WebP"], state="readonly")
-        self.conversion_menu.pack(fill=tk.X)
 
         self.open_folder_checkbox = ttk.Checkbutton(self.frame_right, text="Open folder after conversion", variable=self.open_folder_var)
         self.open_folder_checkbox.pack(fill=tk.X)
@@ -188,7 +188,7 @@ class ImageConverterApp:
 
 
     def browse_image(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.webp *.heic, *.HEIC")])
+        file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.webp *.heic *.HEIC")])
         if file_path:
             self.input_image_path.set(file_path)
             self.update_preview_image(file_path)
@@ -196,17 +196,20 @@ class ImageConverterApp:
             with Image.open(file_path) as img:
                 formats = ["JPEG", "PNG", "WebP"]
                 if img.format == "JPEG":
-                    formats.extend(["WebP", "PNG"])
+                    formats.remove("JPEG")
                 elif img.format == "PNG":
-                    formats.extend(["WebP", "JPEG"])
+                    formats.remove("PNG")
                 elif img.format == "WebP":
-                    formats.extend(["JPEG", "PNG"])
+                    formats.remove("WebP")
                 elif img.format == "HEIC":
-                    formats.extend(["JPEG", "PNG", "WebP"])
+                    formats.remove("JPEG")
+                    formats.remove("PNG")
                 else:
-                    formats.extend(["WebP", "JPEG", "PNG"])
+                    formats = ["JPEG", "PNG", "WebP"]
 
                 self.conversion_menu['values'] = formats
+
+
 
     def browse_images(self):
         file_paths = filedialog.askopenfilenames(filetypes=[("Image files", "*.jpg *.jpeg *.png *.webp *.heic *.HEIC")])
